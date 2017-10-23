@@ -1,23 +1,54 @@
-#include <stdio.h>
-#include <string.h>
-int main()
-{
-    char str1[12] = "Hello";
-    char str2[12] = "World";
-    char str3[12];
-    int  len ;
+#include<netinet/in.h>    
+#include<stdio.h>    
+#include<stdlib.h>    
+#include<sys/socket.h>    
+#include<sys/stat.h>    
+#include<sys/types.h>    
+#include<unistd.h>    
+    
+int main() {    
+   int create_socket, new_socket;    
+   socklen_t addrlen;    
+   int bufsize = 1024;    
+   char *buffer = malloc(bufsize);    
+   struct sockaddr_in address;    
  
-    /* copy str1 into str3 */
-    strcpy(str3, str1);
-    printf("strcpy( str3, str1) :  %s\n", str3 );
- 
-    /* concatenates str1 and str2 */
-    strcat( str1, str2);
-    printf("strcat( str1, str2):   %s\n", str1 );
- 
-    /* total lenghth of str1 after concatenation */
-    len = strlen(str1);
-    printf("strlen(str1) :  %d\n", len );
- 
-    return 0;
+   if ((create_socket = socket(AF_INET, SOCK_STREAM, 0)) > 0){    
+      printf("The socket was created\n");
+   }
+    
+   address.sin_family = AF_INET;    
+   address.sin_addr.s_addr = INADDR_ANY;    
+   address.sin_port = htons(15000);    
+    
+   if (bind(create_socket, (struct sockaddr *) &address, sizeof(address)) == 0){    
+      printf("Binding Socket\n");
+   }
+    
+    
+   while (1) {    
+      if (listen(create_socket, 10) < 0) {    
+         perror("server: listen");    
+         exit(1);    
+      }    
+    
+      if ((new_socket = accept(create_socket, (struct sockaddr *) &address, &addrlen)) < 0) {    
+         perror("server: accept");    
+         exit(1);    
+      }    
+    
+      if (new_socket > 0){    
+         printf("The Client is connected...\n");
+      }
+        
+      recv(new_socket, buffer, bufsize, 0);    
+      printf("%s\n", buffer);    
+      write(new_socket, "HTTP/1.1 200 OK\n", 16);
+      write(new_socket, "Content-length: 20\n", 19);
+      write(new_socket, "Content-Type: application/json\n\n", 32);
+      write(new_socket, "{\"version\":\"c_1.0\"}",20);    
+      close(new_socket);    
+   }    
+   close(create_socket);    
+   return 0;    
 }

@@ -9,6 +9,8 @@ import (
 	"sync"
 )
 
+// The example how simple is to write
+// parallel counting in GO.
 func main() {
 	log.Printf("Application %s starting.", "Word Count")
 	f, _ := os.Open("data.txt")
@@ -21,7 +23,7 @@ func main() {
 	// Signaling channels
 	countStop := make(chan bool)
 
-	var wait = new(sync.WaitGroup)
+	// Start go routine for counting the results
 	cnt := 0
 	go func(c chan int, stopChan chan bool) {
 		for {
@@ -34,6 +36,8 @@ func main() {
 		}
 	}(cChan, countStop)
 
+	// For each line fire a goroutine
+	var wait = new(sync.WaitGroup)
 	goroutineCnt := 0
 	for scanner.Scan() {
 		wait.Add(1)

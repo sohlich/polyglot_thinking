@@ -16,56 +16,36 @@ func main() {
 	scanner := bufio.NewScanner(f)
 	scanner.Split(bufio.ScanLines)
 
-	ch := make(chan string)
+	//Communication channel
 	cChan := make(chan int)
-
 	// Signaling channels
-	stopChan := make(chan bool)
 	countStop := make(chan bool)
 
 	var wait = new(sync.WaitGroup)
-	for i := 0; i < 10; i++ {
-		wait.Add(1)
-		go func(ch <-chan string, countChan chan int, id int) {
-			defer wait.Done()
-			for {
-				select {
-				case s := <-ch:
-					fmt.Printf("%d :Received %s\n", id, s)
-					cChan <- len(strings.Split(s, " "))
-				case <-stopChan:
-					fmt.Printf("%d : Stopping\n", id)
-					return
-				}
-			}
-		}(ch, cChan, i)
-	}
-
 	cnt := 0
 	go func(c chan int, stopChan chan bool) {
 		for {
 			select {
 			case len := <-c:
-				fmt.Printf("Counting %d\n", len)
 				cnt = cnt + len
-			case <-countStop:
-				fmt.Printf("Counting stopped\n")
+			case <-stopChan:
 				return
 			}
 		}
-	}(cChan, stopChan)
+	}(cChan, countStop)
 
+	goroutineCnt := 0
 	for scanner.Scan() {
 		wait.Add(1)
+		goroutineCnt++
 		go func(s string) {
-			ch <- s
+			cChan <- len(strings.Split(s, " "))
 			wait.Done()
 		}(scanner.Text())
 	}
 
-	close(stopChan)
 	wait.Wait()
 	close(countStop)
 
-	fmt.Printf("Total count %d\n", cnt)
+	fmt.Printf("Total count word count:%d counted by %d goroutines\n", cnt, goroutineCnt)
 }
